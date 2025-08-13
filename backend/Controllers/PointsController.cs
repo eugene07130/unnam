@@ -1,81 +1,64 @@
 using System.Security.Claims;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using UnnamHS_App_Backend.DTOs;
-using UnnamHS_App_Backend.Repositories;
+using UnnamHS_App_Backend.Services;
 
 namespace UnnamHS_App_Backend.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize]  // 로그인된 사용자만 접근
+[Authorize]
 public class PointsController : ControllerBase
 {
-    private readonly IUserRepository _userRepository;
+    private readonly IPointsService _points;
 
-    public PointsController(IUserRepository userRepository)
+    public PointsController(IPointsService points)
     {
-        _userRepository = userRepository;
+        _points = points;
     }
 
-    /// <summary>
-    /// 내 포인트 조회
-    /// </summary>
+    // JWT에서 studentCode 꺼내기
+    private string? GetStudentCode()
+        => User.FindFirst("studentCode")?.Value;
+
+    /// <summary>내 포인트 합계</summary>
     [HttpGet]
-    public async Task<IActionResult> GetPoints()
+    public async Task<IActionResult> GetMyPoints()
     {
-        // ① 클레임에서 username 추출
-        var username = User.FindFirstValue(ClaimTypes.Name);
-        if (string.IsNullOrEmpty(username))
-            return Unauthorized();
+        var code = GetStudentCode();
+        if (string.IsNullOrWhiteSpace(code))
+            return Unauthorized("studentCode 없음");
 
-        // ② 사용자 조회
-        var user = await _userRepository.GetByUsernameAsync(username);
-        if (user == null)
-            return NotFound();
-
-        // ③ 응답 DTO로 반환
-        var response = new PointsResponseDto(user.Username, user.Points);
-        return Ok(response);
+        var total = await _points.GetTotalAsync(code);
+        return Ok(new { studentCode = code, total });
     }
 
-    /// <summary>
-    /// 포인트 적립
-    /// </summary>
+    /// <summary>포인트 적립</summary>
     [HttpPost("add")]
-    public async Task<IActionResult> AddPoints([FromBody] PointRequestDto dto)
+    public async Task<IActionResult> Add([FromBody] PointRequestDto dto)
     {
-        // ① 클레임에서 username 추출
-        var username = User.FindFirstValue(ClaimTypes.Name);
-        if (string.IsNullOrEmpty(username))
-            return Unauthorized();
+        var code = GetStudentCode();
+        if (string.IsNullOrWhiteSpace(code))
+            return Unauthorized("studentCode 없음");
 
-        // ② 포인트 적립 시도
-        var success = await _userRepository.AddPointsAsync(username, dto.Amount);
-        if (!success)
-            return NotFound("User not found");
-
-        return Ok(new { message = "Points added", current = (await _userRepository.GetByUsernameAsync(username))?.Points });
+        await _points.AddAsync(code, dto.Amount, dto.Source ?? "manual");
+        var total = await _points.GetTotalAsync(code);
+        return Ok(new { message = "added", total });
     }
 
-    /// <summary>
-    /// 포인트 사용
-    /// </summary>
+    /// <summary>포인트 사용</summary>
     [HttpPost("use")]
-    public async Task<IActionResult> UsePoints([FromBody] PointRequestDto dto)
+    public async Task<IActionResult> Use([FromBody] PointRequestDto dto)
     {
-        // ① 클레임에서 username 추출
-        var username = User.FindFirstValue(ClaimTypes.Name);
-        if (string.IsNullOrEmpty(username))
-            return Unauthorized();
+        var code = GetStudentCode();
+        if (string.IsNullOrWhiteSpace(code))
+            return Unauthorized("studentCode 없음");
 
-        // ② 포인트 사용 시도
-        var success = await _userRepository.UsePointsAsync(username, dto.Amount);
-        if (!success)
-            return BadRequest("Insufficient points or user not found");
+        var ok = await _points.TryUseAsync(code, dto.Amount, dto.Source ?? "use");
+        if (!ok) return BadRequest("포인트 부족");
 
-        return Ok(new { message = "Points used", current = (await _userRepository.GetByUsernameAsync(username))?.Points });
+        var total = await _points.GetTotalAsync(code);
+        return Ok(new { message = "used", total });
     }
 }
-

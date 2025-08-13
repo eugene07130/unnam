@@ -1,7 +1,12 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace UnnamHS_App_Backend.DTOs;
 
-public class LoginRequestDto
+public sealed class LoginRequestDto
 {
-    public string? Username { get; set; }
-    public string? Password { get; set; }
+    [Required, MinLength(3), MaxLength(32)]
+    public string UserId { get; set; } = default!;
+
+    [Required, MinLength(6), MaxLength(128)]
+    public string Password { get; set; } = default!;
 }

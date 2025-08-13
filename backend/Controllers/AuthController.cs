@@ -1,6 +1,8 @@
+using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using UnnamHS_App_Backend.Services;
 using UnnamHS_App_Backend.DTOs;
-using UnnamHS_App_Backend.Services;   // IAuthService
 
 namespace UnnamHS_App_Backend.Controllers;
 
@@ -8,23 +10,24 @@ namespace UnnamHS_App_Backend.Controllers;
 [Route("api/[controller]")]
 public class AuthController : ControllerBase
 {
-    private readonly IAuthService _authService;
+    private readonly IAuthService _auth;
 
-    public AuthController(IAuthService authService)
+    public AuthController(IAuthService auth)
     {
-        _authService = authService;
+        _auth = auth;
     }
 
-    /// <summary>
-    /// 아이디·비밀번호로 로그인 → JWT 발급.
-    /// 실패 시 401 Unauthorized.
-    /// </summary>
+    // POST: /api/auth/login
     [HttpPost("login")]
-    public async Task<IActionResult> Login([FromBody] LoginRequestDto request)
+    [AllowAnonymous]
+    public async Task<IActionResult> Login([FromBody] LoginRequestDto dto)
     {
-        var response = await _authService.AuthenticateAsync(request);
-        return response is null
-            ? Unauthorized("아이디 또는 비밀번호가 올바르지 않습니다.")
-            : Ok(response);
+        if (!ModelState.IsValid) return ValidationProblem(ModelState);
+
+        var (ok, token, error) = await _auth.LoginAsync(dto.UserId, dto.Password);
+        if (ok && !string.IsNullOrEmpty(token))
+            return Ok(new { token });
+
+        return Unauthorized(new { error = error ?? "invalid_credentials" });
     }
 }
