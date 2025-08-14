@@ -47,9 +47,9 @@
     <PackageReference Include="SixLabors.ImageSharp.Drawing" Version="2.1.0" />
   </ItemGroup>
 
-  <!-- 프로젝트 바깥(상위 폴더)의 best.onnx를 링크로 포함 + 출력 폴더로 복사 -->
+  <!-- backend/Assets 폴더의 best.onnx를 포함해서 빌드 출력 경로로 복사 -->
   <ItemGroup>
-    <None Include="..\best.onnx" Link="best.onnx">
+    <None Include="Assets\best.onnx">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
