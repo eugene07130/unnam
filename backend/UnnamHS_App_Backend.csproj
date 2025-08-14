@@ -4,40 +4,54 @@
     <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <!-- XML 문서 파일 생성 -->
+
+    <!-- XML 문서 주석 파일 생성 + 1591 경고 억제 -->
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <!-- 주석 없는 멤버 경고 무시 (1591은 XML comments 관련) -->
     <NoWarn>$(NoWarn);1591</NoWarn>
+
+    <!-- 배포 안정성: 트리밍/리플렉션 이슈 방지 -->
+    <PublishTrimmed>false</PublishTrimmed>
+
+    <!-- JIT 최적화 -->
+    <TieredPGO>true</TieredPGO>
+
+    <!-- 개발용 사용자 비밀(원하면 주석 해제 후 사용) -->
+    <!-- <UserSecretsId>UnnamHS_App_Backend-Dev</UserSecretsId> -->
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.7" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.7" />
+
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.8" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.8" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.8">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.8" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.8">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.*" />
-    
+
+    <!-- 스웨거: 버전 고정 -->
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+
+    <!-- Jwt 패키지: JwtBearer가 사용하는 8.x로 고정 -->
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.13.0" />
+
+    <!-- ONNX 추론/이미지 처리 -->
     <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.18.0" />
     <PackageReference Include="SixLabors.ImageSharp" Version="3.1.5" />
     <PackageReference Include="SixLabors.ImageSharp.Drawing" Version="2.1.0" />
   </ItemGroup>
 
+  <!-- 프로젝트 바깥(상위 폴더)의 best.onnx를 링크로 포함 + 출력 폴더로 복사 -->
   <ItemGroup>
-    <None Update="..\best.onnx">
+    <None Include="..\best.onnx" Link="best.onnx">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
-
-  
 
 </Project>

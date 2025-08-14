@@ -29,7 +29,7 @@ public class AppDbContext : DbContext
         {
             e.HasKey(s => s.StudentCode);
             e.Property(s => s.StudentCode).HasMaxLength(16).IsRequired();
-            e.Property(s => s.Name).HasMaxLength(10).IsRequired();
+            e.Property(s => s.Name).HasMaxLength(64).IsRequired();
             e.HasIndex(s => s.StudentCode).IsUnique();
         });
 
@@ -42,6 +42,16 @@ public class AppDbContext : DbContext
                 .HasForeignKey<User>(x => x.StudentCode)
                 .OnDelete(DeleteBehavior.Restrict);
             u.HasIndex(x => x.StudentCode).IsUnique();
+        });
+
+        // PointHistory
+        modelBuilder.Entity<PointHistory>(p =>
+        {
+            p.HasKey(x => x.Id);
+            p.HasOne(x => x.Student)
+                .WithMany()
+                .HasForeignKey(x => x.StudentCode)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         // Books
@@ -65,15 +75,6 @@ public class AppDbContext : DbContext
                 .OnDelete(DeleteBehavior.Restrict);
         });
 
-        // PointHistory
-        modelBuilder.Entity<PointHistory>(p =>
-        {
-            p.HasKey(x => x.Id);
-            p.HasOne(x => x.Student)
-                .WithMany()
-                .HasForeignKey(x => x.StudentCode)
-                .OnDelete(DeleteBehavior.Cascade);
-        });
 
         // Bookmark
         modelBuilder.Entity<Bookmark>(b =>
