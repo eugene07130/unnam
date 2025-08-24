@@ -10,3 +10,4 @@ public sealed class LoginRequestDto
     [Required, MinLength(6), MaxLength(128)]
     public string Password { get; set; } = default!;
 }
+

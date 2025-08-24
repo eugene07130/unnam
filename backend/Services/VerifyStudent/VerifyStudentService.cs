@@ -4,10 +4,10 @@ using UnnamHS_App_Backend.Models;
 using System.Threading.Tasks;
 
 namespace UnnamHS_App_Backend.Services;
-public class StudentVerifyService : IStudentVerifyService
+public class VerifyStudentService : IVerifyStudentService
 {
     private readonly AppDbContext _db;
-    public StudentVerifyService(AppDbContext db) => _db = db;
+    public VerifyStudentService(AppDbContext db) => _db = db;
 
     public async Task<bool> IsUsableAsync(string studentCode)
     {

@@ -51,7 +51,7 @@ builder.Services.AddAuthorization();
 // DI
 builder.Services.AddScoped<IAuthService,          AuthService>();
 builder.Services.AddScoped<IRegistrationService,  RegistrationService>();
-builder.Services.AddScoped<IStudentVerifyService, StudentVerifyService>();
+builder.Services.AddScoped<IVerifyStudentService, VerifyStudentService>();
 builder.Services.AddScoped<IPointsService, PointsService>();
 builder.Services.AddScoped<IBorrowService, BorrowService>();
 builder.Services.AddScoped<IBookmarkService, BookmarkService>();

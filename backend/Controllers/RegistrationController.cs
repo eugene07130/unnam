@@ -1,55 +1,52 @@
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.ComponentModel.DataAnnotations;
 using UnnamHS_App_Backend.DTOs;
 using UnnamHS_App_Backend.Services;
 
 namespace UnnamHS_App_Backend.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/registration")]
 public class RegistrationController : ControllerBase
 {
-    private readonly IRegistrationService _regService;
-    private readonly IStudentVerifyService _verify;
+    private readonly IRegistrationService _svc;
 
-    public RegistrationController(
-        IRegistrationService regService,
-        IStudentVerifyService verify)
+    public RegistrationController(IRegistrationService svc)
     {
-        _regService = regService;
-        _verify = verify;
+        _svc = svc;
     }
 
-    /// <summary>
-    /// 학생코드 사용 가능 여부(Students에 존재 및 Users에 미연결)
-    /// </summary>
-    [HttpPost("check")]
-    [AllowAnonymous]
-    public async Task<IActionResult> Check([FromBody] VerifyStudentDto dto)
+    /// <summary>로그인 ID 가용성 확인</summary>
+    [HttpGet("user-id/available")]
+    [ProducesResponseType(typeof(UserIdAvailabilityDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<UserIdAvailabilityDto>> IsUserIdAvailable(
+        [FromQuery, Required, StringLength(64, MinimumLength = 1)] string userId)
     {
-        if (!ModelState.IsValid) return ValidationProblem(ModelState);
-
-        var usable = await _verify.IsUsableAsync(dto.StudentCode);
-        return Ok(new { usable });
+        var ok = await _svc.IsUserIdAvailableAsync(userId);
+        return Ok(new UserIdAvailabilityDto { UserId = userId, IsAvailable = ok });
     }
 
-    /// <summary>
-    /// 회원가입 (User.Id, Password, Name, StudentCode, Role)
-    /// </summary>
+    /// <summary>회원가입(학생 전용 가정). 서비스 인터페이스에 맞춰 위임</summary>
     [HttpPost]
-    [AllowAnonymous]
-    public async Task<IActionResult> Register([FromBody] RegisterUserDto dto)
+    [ProducesResponseType(typeof(RegisterResult), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<RegisterResult>> Register([FromBody] RegisterUserDto dto)
     {
-        if (!ModelState.IsValid) return ValidationProblem(ModelState);
-
-        var result = await _regService.RegisterAsync(dto);
-        return result switch
+        try
         {
-            RegisterResult.Success         => Ok(new { message = "회원가입 성공" }),
-            RegisterResult.UsernameTaken   => Conflict(new { error = "아이디 중복" }),
-            RegisterResult.CodeAlreadyUsed => Conflict(new { error = "이미 사용된 학생코드" }),
-            RegisterResult.InvalidCode     => BadRequest(new { error = "유효하지 않은 학생코드" }),
-            _                              => StatusCode(500, new { error = "registration_failed" })
-        };
+            var result = await _svc.RegisterAsync(dto);
+            return Created($"/api/users/{result.UserId}", result);
+        }
+        catch (ArgumentException ex)
+        {
+            // 형식/검증 오류 등
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            // 비즈니스 충돌: userId 중복, studentCode 이미 연동 등
+            return Conflict(new { message = ex.Message });
+        }
     }
 }

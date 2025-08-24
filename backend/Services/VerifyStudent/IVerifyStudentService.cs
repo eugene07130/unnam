@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 
 namespace UnnamHS_App_Backend.Services;
 
-public interface IStudentVerifyService
+public interface IVerifyStudentService
 {
     // 학생코드가 존재 하는가? Users에 아직 연결되지 않았는가?
     Task<bool> IsUsableAsync(string studentCode);
